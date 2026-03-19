@@ -1,0 +1,257 @@
+:root {
+  --bg: #0b0f17;
+  --panel: #121a29;
+  --panel-2: #0f1624;
+  --border: #24324a;
+  --text: #e6edf7;
+  --muted: #a9b7d0;
+  --accent: #7c5cff;
+  --good: #38d39f;
+  --bad: #ff5c7a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#app {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+}
+
+.title h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.title .sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.phase-badge {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: start;
+  }
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.panel h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: rgba(124, 92, 255, 0.6);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.accent {
+  border-color: rgba(124, 92, 255, 0.6);
+  background: rgba(124, 92, 255, 0.15);
+}
+
+.danger {
+  border-color: rgba(255, 92, 122, 0.65);
+  background: rgba(255, 92, 122, 0.14);
+}
+
+.good {
+  border-color: rgba(56, 211, 159, 0.65);
+  background: rgba(56, 211, 159, 0.14);
+}
+
+.warn {
+  border-color: rgba(255, 200, 90, 0.65);
+  background: rgba(255, 200, 90, 0.14);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid rgba(36, 50, 74, 0.75);
+  padding: 10px 8px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.suitRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.suitBtn {
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.suitBtnActive {
+  border-color: rgba(124, 92, 255, 0.8);
+  background: rgba(124, 92, 255, 0.18);
+}
+
+.courseCards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.cardPill {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.input {
+  width: 110px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lane {
+  border: 1px solid rgba(36, 50, 74, 0.9);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.laneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.laneBar {
+  position: relative;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(36, 50, 74, 0.9);
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.laneMarker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(124, 92, 255, 0.95);
+  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18);
+}
+
+.laneMarkerWinner {
+  background: rgba(56, 211, 159, 0.95);
+  box-shadow: 0 0 0 4px rgba(56, 211, 159, 0.18);
+}
+
+.footnote {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
