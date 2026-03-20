@@ -255,3 +255,98 @@ button:disabled {
   line-height: 1.35;
 }
 
+/* Connection indicator */
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.connection-dot.online {
+  background: var(--good);
+  box-shadow: 0 0 6px rgba(56, 211, 159, 0.5);
+}
+.connection-dot.offline {
+  background: var(--bad);
+  box-shadow: 0 0 6px rgba(255, 92, 122, 0.5);
+}
+
+/* Player app (mobile-first) */
+.player-app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px;
+  min-height: 100dvh;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  margin-bottom: 12px;
+}
+
+.player-card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.player-suit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.player-suit-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.player-bet-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.player-bet-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-bet-value {
+  font-weight: 800;
+  font-size: 20px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.player-topup-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 999px;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
