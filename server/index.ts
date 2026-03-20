@@ -226,3 +226,14 @@ httpServer.listen(PORT, () => {
   console.log(`[server] WebSocket server on port ${PORT}`)
   console.log(`[server] LAN address: http://${lanAddress}:5173/play`)
 })
+
+function shutdown() {
+  console.log('\n[server] Shutting down...')
+  io.close()
+  httpServer.close(() => {
+    process.exit(0)
+  })
+}
+
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
