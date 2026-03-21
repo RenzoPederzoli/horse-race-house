@@ -1,3 +1,10 @@
+export type Rank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'A'
+
+export interface Card {
+  rank: Rank
+  suit: Suit
+}
+
 export type Suit = 'clubs' | 'diamonds' | 'hearts' | 'spades'
 
 export const SUITS: Suit[] = ['clubs', 'diamonds', 'hearts', 'spades']
@@ -26,12 +33,15 @@ export type BetsByPlayer = Record<PlayerId, Partial<Record<Suit, number>>>
 export interface CourseState {
   cards: Suit[] // top row course cards (should be length 0..7)
   reshuffleNeeded: boolean
+  fullCards?: Card[] // actual Card objects when automated
 }
 
 export interface RaceState {
   winnerSuit?: Suit
   seed?: number
   finalPositions?: Record<Suit, number> // 0..8 (winner at 8)
+  raceSequence?: Card[]
+  positionsAtStep?: Record<Suit, number>[]
 }
 
 export interface PayoutResult {
@@ -76,5 +86,6 @@ export interface HouseGameState {
   race: RaceState
   payout?: PayoutResult
   settlement?: SettlementResult
+  automated: boolean
 }
 

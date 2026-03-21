@@ -350,3 +350,185 @@ button:disabled {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
+/* Playing Card */
+.playing-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 3px;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  box-sizing: border-box;
+}
+.playing-card-sm { width: 42px; height: 60px; }
+.playing-card-md { width: 60px; height: 84px; }
+.playing-card-lg { width: 80px; height: 112px; }
+.playing-card-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  font-weight: 700;
+}
+.playing-card-top {
+  align-self: flex-start;
+}
+.playing-card-bottom {
+  align-self: flex-end;
+  transform: rotate(180deg);
+}
+.playing-card-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 400;
+}
+
+/* Card "place" entrance animation */
+@keyframes card-place {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-8deg) translateY(-20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) rotate(1deg) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg) translateY(0);
+  }
+}
+.playing-card-enter {
+  animation: card-place 0.28s cubic-bezier(0.22, 0.68, 0.35, 1.2) both;
+}
+
+/* Race Board v2 — card-based lanes matching reference images */
+.race-board-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.race-board-v2-compact {
+  gap: 10px;
+}
+.race-board-v2-course {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.race-board-v2-arena {
+  display: flex;
+  gap: 0;
+  position: relative;
+}
+.race-board-v2-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.race-lane-v2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  min-height: 66px;
+}
+.race-lane-v2-winner .race-lane-v2-ace .playing-card {
+  box-shadow: 0 0 0 2px var(--good), 0 0 8px rgba(56, 211, 159, 0.4);
+}
+.race-lane-v2-ace {
+  flex-shrink: 0;
+}
+.race-lane-v2-track {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.race-lane-v2-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.race-lane-v2-slots {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+.race-lane-v2-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1px;
+}
+.race-lane-v2-slot .playing-card {
+  width: 100%;
+  max-width: 42px;
+  height: auto;
+  aspect-ratio: 42 / 60;
+  overflow: hidden;
+  padding: 1px;
+  font-size: 9px;
+}
+.race-lane-v2-slot .playing-card .playing-card-center {
+  font-size: 14px;
+}
+
+/* Finish line — vertical dashed line on the right */
+.race-board-v2-finish {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: stretch;
+  margin-left: 2px;
+  flex-shrink: 0;
+  position: relative;
+}
+.race-board-v2-finish-line {
+  width: 2px;
+  flex: 1;
+  border-left: 2px dashed var(--muted);
+}
+.race-board-v2-finish-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 2px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  background: var(--panel);
+  padding: 4px 0;
+}
+
+/* Compact adjustments for mobile */
+.race-board-v2-compact .race-lane-v2 {
+  min-height: 44px;
+  gap: 4px;
+}
+.race-board-v2-compact .race-lane-v2-slot .playing-card {
+  max-width: 36px;
+}
+

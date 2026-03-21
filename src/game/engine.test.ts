@@ -91,6 +91,7 @@ describe('Game state machine (undo)', () => {
       betsByPlayer,
       race: raceState,
       payout: undefined,
+      automated: false,
     }
 
     const hist0 = createHistoryState(base)
@@ -132,6 +133,7 @@ describe('Game state machine (undo)', () => {
       race: {},
       payout: undefined,
       settlement: undefined,
+      automated: false,
     }
 
     const hist0 = createHistoryState(base)
@@ -176,6 +178,7 @@ describe('House debt settlement', () => {
       race: {},
       payout: undefined,
       settlement: undefined,
+      automated: false,
     }
 
     const hist0 = createHistoryState(base)
@@ -221,6 +224,7 @@ describe('House debt settlement', () => {
       race: {},
       payout: undefined,
       settlement: undefined,
+      automated: false,
     }
 
     const hist0 = createHistoryState(base)

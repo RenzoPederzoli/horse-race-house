@@ -46,5 +46,10 @@ export function projectPlayerView(state: HouseGameState, playerId: PlayerId): Pl
     chipsPerDollar: state.chipsPerDollar,
     racesCompleted: state.racesCompleted,
     racesToPlay: state.racesToPlay,
+    automated: state.automated,
+    courseFullCards: state.course.fullCards,
+    raceSequence: state.race.raceSequence,
+    positionsAtStep: state.race.positionsAtStep,
+    raceFinalPositions: state.race.finalPositions,
   }
 }

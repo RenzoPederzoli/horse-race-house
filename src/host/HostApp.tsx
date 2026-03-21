@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { HouseGameState, Suit } from '../game/types.ts'
 import type { GameAction } from '../game/reducer.ts'
 import {
@@ -11,6 +11,8 @@ import { useSocket } from '../shared/useSocket.ts'
 import { EVENTS } from '../shared/protocol.ts'
 import type { HostView, ConnectedPlayer } from '../shared/protocol.ts'
 import { QRCodePanel } from './QRCodePanel.tsx'
+import { RaceBoard } from '../shared/RaceBoard.tsx'
+import { useRaceAnimation, allDrawnBySuit } from '../shared/useRaceAnimation.ts'
 
 function formatOddsLabel(k: number): string {
   if (k === 1) return '1-1'
@@ -82,6 +84,31 @@ export function HostApp() {
   const [uiError, setUiError] = useState<string | null>(null)
   const [selectedWinnerSuit, setSelectedWinnerSuit] = useState<Suit | undefined>(undefined)
   const [topUpAmounts, setTopUpAmounts] = useState<Record<string, number>>({})
+
+  // Race animation for automated mode (only active during race phase)
+  const raceAnim = useRaceAnimation(
+    state?.race.raceSequence,
+    state?.race.positionsAtStep,
+    state?.phase === 'race',
+  )
+
+  // Auto-confirm race outcome when animation completes.
+  const autoConfirmedRef = useRef(false)
+  useEffect(() => {
+    if (state?.phase !== 'race') {
+      autoConfirmedRef.current = false
+      return
+    }
+    if (
+      state.automated &&
+      state.race.winnerSuit &&
+      raceAnim.isComplete &&
+      !autoConfirmedRef.current
+    ) {
+      autoConfirmedRef.current = true
+      socket?.emit(EVENTS.HOST_ACTION, { type: 'CONFIRM_RACE_OUTCOME', winnerSuit: state.race.winnerSuit })
+    }
+  }, [state?.automated, state?.phase, state?.race.winnerSuit, raceAnim.isComplete, socket])
 
   // Identify as host and listen for state updates
   useEffect(() => {
@@ -287,6 +314,17 @@ export function HostApp() {
                 </label>
               </div>
 
+              <div className="row" style={{ marginTop: 10 }}>
+                <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={state.automated}
+                    onChange={(e) => doAction({ type: 'SET_SETTINGS', startingChips: state.startingChips, houseBankroll: state.houseBankroll, chipsPerDollar: state.chipsPerDollar, racesToPlay: state.racesToPlay, automated: e.target.checked })}
+                  />
+                  Automated dealing (computer shuffles and deals)
+                </label>
+              </div>
+
               <div className="row" style={{ marginTop: 16 }}>
                 <button type="button" className="accent" onClick={() => doAction({ type: 'START_NEW_GAME' })} disabled={state.players.length < 3}>
                   Start New Race
@@ -346,6 +384,14 @@ export function HostApp() {
           {state.phase === 'betting' ? (
             <>
               <h2>Betting</h2>
+              {state.automated && state.course.fullCards && (
+                <div style={{ marginBottom: 12 }}>
+                  <RaceBoard
+                    courseCards={state.course.fullCards}
+                    drawnBySuit={{ clubs: [], diamonds: [], hearts: [], spades: [] }}
+                  />
+                </div>
+              )}
               <div className="row" style={{ marginBottom: 12 }}>
                 <div className="muted" style={{ fontSize: 13 }}>Odds from course:</div>
                 <div className="spacer" />
@@ -416,44 +462,64 @@ export function HostApp() {
           ) : null}
 
           {state.phase === 'race' ? (
-            <>
-              <h2>Race Outcome</h2>
-              <div className="muted" style={{ marginBottom: 10 }}>
-                Instead of entering every dealt card, pick the winning horse/suit.
-              </div>
-
-              {suitButtons({ disabled: false, activeSuit: selectedWinnerSuit, onPick: (s) => setSelectedWinnerSuit(s) })}
-
-              <div style={{ marginTop: 16 }}>
-                <h2 style={{ margin: 0, fontSize: 15 }}>Bet preview (locked in)</h2>
-                <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
-                  Bets by player are shown here while the dealer selects the winner.
+            state.automated && state.race.raceSequence ? (
+              <>
+                <h2>Race {raceAnim.isComplete ? '- Complete!' : '- In Progress...'}</h2>
+                <RaceBoard
+                  courseCards={state.course.fullCards}
+                  drawnBySuit={raceAnim.drawnBySuit}
+                  winnerSuit={raceAnim.isComplete ? state.race.winnerSuit : undefined}
+                  animating={raceAnim.isAnimating}
+                />
+                {!raceAnim.isComplete && (
+                  <div className="row" style={{ marginTop: 14 }}>
+                    <div className="spacer" />
+                    <button type="button" onClick={() => raceAnim.skipToEnd()}>
+                      Skip Animation
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <h2>Race Outcome</h2>
+                <div className="muted" style={{ marginBottom: 10 }}>
+                  Instead of entering every dealt card, pick the winning horse/suit.
                 </div>
-                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {state.players.map((p) => {
-                    const bets = state.betsByPlayer[p.id] ?? {}
-                    const items = SUITS.filter((s) => (bets[s] ?? 0) > 0).map((s) => `${SUIT_LABEL[s]}: ${bets[s] ?? 0}`)
-                    const total = totalBets(bets)
-                    return (
-                      <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 10, background: 'rgba(255, 255, 255, 0.03)' }}>
-                        <div style={{ fontWeight: 900 }}>{p.name}</div>
-                        <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                          {items.length ? items.join(', ') : 'No bets'}
+
+                {suitButtons({ disabled: false, activeSuit: selectedWinnerSuit, onPick: (s) => setSelectedWinnerSuit(s) })}
+
+                <div style={{ marginTop: 16 }}>
+                  <h2 style={{ margin: 0, fontSize: 15 }}>Bet preview (locked in)</h2>
+                  <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+                    Bets by player are shown here while the dealer selects the winner.
+                  </div>
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {state.players.map((p) => {
+                      const bets = state.betsByPlayer[p.id] ?? {}
+                      const items = SUITS.filter((s) => (bets[s] ?? 0) > 0).map((s) => `${SUIT_LABEL[s]}: ${bets[s] ?? 0}`)
+                      const total = totalBets(bets)
+                      return (
+                        <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 10, background: 'rgba(255, 255, 255, 0.03)' }}>
+                          <div style={{ fontWeight: 900 }}>{p.name}</div>
+                          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
+                            {items.length ? items.join(', ') : 'No bets'}
+                          </div>
+                          <div style={{ fontWeight: 800, marginTop: 6 }}>Total: {total}</div>
                         </div>
-                        <div style={{ fontWeight: 800, marginTop: 6 }}>Total: {total}</div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <div className="row" style={{ marginTop: 14 }}>
-                <div className="spacer" />
-                <button type="button" className="accent" disabled={!canConfirmRaceOutcome} onClick={() => doAction({ type: 'CONFIRM_RACE_OUTCOME', winnerSuit: selectedWinnerSuit! })}>
-                  Confirm Outcome
-                </button>
-              </div>
-            </>
+                <div className="row" style={{ marginTop: 14 }}>
+                  <div className="spacer" />
+                  <button type="button" className="accent" disabled={!canConfirmRaceOutcome} onClick={() => doAction({ type: 'CONFIRM_RACE_OUTCOME', winnerSuit: selectedWinnerSuit! })}>
+                    Confirm Outcome
+                  </button>
+                </div>
+              </>
+            )
           ) : null}
 
           {state.phase === 'payout' && state.payout ? (
@@ -494,11 +560,19 @@ export function HostApp() {
 
               <div style={{ marginTop: 14 }}>
                 <h2 style={{ margin: '0 0 10px', fontSize: 15 }}>Track (finish state)</h2>
-                <div className="suitRow">
-                  {SUITS.map((s) => (
-                    <TrackLane key={s} suit={s} position={state.race.finalPositions?.[s] ?? 0} isWinner={s === state.race.winnerSuit} />
-                  ))}
-                </div>
+                {state.automated && state.course.fullCards && state.race.raceSequence ? (
+                  <RaceBoard
+                    courseCards={state.course.fullCards}
+                    drawnBySuit={allDrawnBySuit(state.race.raceSequence)}
+                    winnerSuit={state.race.winnerSuit}
+                  />
+                ) : (
+                  <div className="suitRow">
+                    {SUITS.map((s) => (
+                      <TrackLane key={s} suit={s} position={state.race.finalPositions?.[s] ?? 0} isWinner={s === state.race.winnerSuit} />
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginTop: 16 }}>

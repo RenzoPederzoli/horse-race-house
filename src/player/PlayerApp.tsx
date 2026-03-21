@@ -5,6 +5,8 @@ import type { PlayerView } from '../shared/protocol.ts'
 import { SUITS, SUIT_LABEL } from '../game/types.ts'
 import type { Suit } from '../game/types.ts'
 import { BettingForm } from './BettingForm.tsx'
+import { RaceBoard } from '../shared/RaceBoard.tsx'
+import { useRaceAnimation, allDrawnBySuit } from '../shared/useRaceAnimation.ts'
 
 function getSessionId(): string {
   const KEY = 'hrh-session-id'
@@ -66,6 +68,8 @@ export function PlayerApp() {
   function handleUndo() {
     socket?.emit(EVENTS.PLAYER_UNDO)
   }
+
+  const raceAnim = useRaceAnimation(view?.raceSequence, view?.positionsAtStep, view?.phase === 'race')
 
   function handleTopUp() {
     if (topUpAmount <= 0) return
@@ -135,6 +139,15 @@ export function PlayerApp() {
           <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
             Waiting for the dealer...
           </div>
+          {view.courseFullCards && view.courseFullCards.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <RaceBoard
+                courseCards={view.courseFullCards}
+                drawnBySuit={{ clubs: [], diamonds: [], hearts: [], spades: [] }}
+                compact
+              />
+            </div>
+          )}
           {view.courseCards.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>Course odds:</div>
@@ -155,6 +168,15 @@ export function PlayerApp() {
       {view.phase === 'betting' && (
         <div className="player-card">
           <h2 style={{ margin: '0 0 12px', fontSize: 16 }}>Place your bets</h2>
+          {view.courseFullCards && view.courseFullCards.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <RaceBoard
+                courseCards={view.courseFullCards}
+                drawnBySuit={{ clubs: [], diamonds: [], hearts: [], spades: [] }}
+                compact
+              />
+            </div>
+          )}
           <BettingForm
             bets={view.bets}
             oddsBySuit={view.oddsBySuit}
@@ -169,22 +191,39 @@ export function PlayerApp() {
       {/* Race phase */}
       {view.phase === 'race' && (
         <div className="player-card">
-          <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
-            Waiting for the dealer to pick the winner...
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>Your bets (locked):</div>
-            {SUITS.filter((s) => (view.bets[s] ?? 0) > 0).map((s) => (
-              <div key={s} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-                <span>{SUIT_LABEL[s]} ({formatOddsLabel(view.oddsBySuit[s])})</span>
-                <span style={{ fontWeight: 800 }}>{view.bets[s]}</span>
+          {view.automated && view.raceSequence ? (
+            <>
+              <h2 style={{ margin: '0 0 8px', fontSize: 15 }}>
+                {raceAnim.isComplete ? 'Race Complete!' : 'Race in progress...'}
+              </h2>
+              <RaceBoard
+                courseCards={view.courseFullCards}
+                drawnBySuit={raceAnim.drawnBySuit}
+                winnerSuit={raceAnim.isComplete ? (view.raceSequence ? (Object.entries(view.raceFinalPositions ?? {}).find(([, v]) => v >= 8)?.[0] as Suit | undefined) : undefined) : undefined}
+                compact
+                animating={raceAnim.isAnimating}
+              />
+            </>
+          ) : (
+            <>
+              <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
+                Waiting for the dealer to pick the winner...
               </div>
-            ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 0', borderTop: '1px solid var(--border)', marginTop: 8 }}>
-              <span style={{ fontWeight: 700 }}>Total at risk</span>
-              <span style={{ fontWeight: 800 }}>{totalBet}</span>
-            </div>
-          </div>
+              <div style={{ marginTop: 8 }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>Your bets (locked):</div>
+                {SUITS.filter((s) => (view.bets[s] ?? 0) > 0).map((s) => (
+                  <div key={s} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                    <span>{SUIT_LABEL[s]} ({formatOddsLabel(view.oddsBySuit[s])})</span>
+                    <span style={{ fontWeight: 800 }}>{view.bets[s]}</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 0', borderTop: '1px solid var(--border)', marginTop: 8 }}>
+                  <span style={{ fontWeight: 700 }}>Total at risk</span>
+                  <span style={{ fontWeight: 800 }}>{totalBet}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -192,6 +231,16 @@ export function PlayerApp() {
       {view.phase === 'payout' && view.raceResult && (
         <div className="player-card">
           <h2 style={{ margin: '0 0 12px', fontSize: 16 }}>Race Result</h2>
+          {view.raceSequence && (
+            <div style={{ marginBottom: 16 }}>
+              <RaceBoard
+                courseCards={view.courseFullCards}
+                drawnBySuit={allDrawnBySuit(view.raceSequence)}
+                winnerSuit={view.raceResult.winnerSuit}
+                compact
+              />
+            </div>
+          )}
           <div style={{ textAlign: 'center', padding: 16 }}>
             <div className="muted" style={{ fontSize: 13 }}>Winner</div>
             <div style={{ fontWeight: 800, fontSize: 24, marginTop: 4 }}>

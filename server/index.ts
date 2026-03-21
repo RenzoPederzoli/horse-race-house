@@ -3,6 +3,8 @@ import { networkInterfaces } from 'node:os'
 import { Server } from 'socket.io'
 import { createInitialGameState } from '../src/game/reducer.ts'
 import type { GameAction } from '../src/game/reducer.ts'
+import { createDeck, dealCourse, simulateRace } from '../src/game/deck.ts'
+import type { Card } from '../src/game/types.ts'
 import { historyReducer, createHistoryState } from '../src/game/history.ts'
 import type { HistoryAction, HistoryState } from '../src/game/history.ts'
 import { projectPlayerView } from './stateProjection.ts'
@@ -46,6 +48,9 @@ const sessions = new Map<string, { playerId: string; name: string; socketId: str
 
 // Per-player bet undo stacks: playerId -> stack of previous bets
 const playerBetUndoStacks = new Map<string, Array<Record<string, number>>>()
+
+// Server-only remaining deck for automated mode
+let currentRemainingDeck: Card[] = []
 
 // --- Server ---
 
@@ -93,6 +98,33 @@ function broadcastState() {
   }
 }
 
+function maybeAutomate() {
+  const state = getState()
+  if (!state.automated) return
+
+  if (state.phase === 'course' && state.course.cards.length === 0) {
+    const deck = createDeck()
+    const { courseCards, remainingDeck } = dealCourse(deck)
+    currentRemainingDeck = remainingDeck
+    dispatchAction({ type: 'SET_AUTOMATED_COURSE', courseCards })
+    // Don't broadcast here — caller broadcasts once after all automations
+    return
+  }
+
+  if (state.phase === 'race' && !state.race.raceSequence) {
+    const result = simulateRace(currentRemainingDeck)
+    dispatchAction({
+      type: 'SET_AUTOMATED_RACE',
+      raceSequence: result.sequence,
+      positionsAtStep: result.positionsAtStep,
+      winnerSuit: result.winnerSuit,
+      finalPositions: result.finalPositions,
+    })
+    // Don't broadcast here — caller broadcasts once after all automations
+    return
+  }
+}
+
 io.on('connection', (socket) => {
   console.log(`[ws] connected: ${socket.id}`)
 
@@ -108,9 +140,11 @@ io.on('connection', (socket) => {
 
     if (action.type === 'FULL_RESET_TO_SETUP') {
       playerBetUndoStacks.clear()
+      currentRemainingDeck = []
     }
 
     dispatchAction(action)
+    maybeAutomate()
     broadcastState()
   })
 

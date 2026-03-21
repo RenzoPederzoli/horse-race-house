@@ -1,4 +1,4 @@
-import type { GamePhase, PlayerId, Suit } from '../game/types.ts'
+import type { Card, GamePhase, PlayerId, Suit } from '../game/types.ts'
 
 // --- Socket event names ---
 
@@ -50,6 +50,11 @@ export interface PlayerView {
   chipsPerDollar: number
   racesCompleted: number
   racesToPlay: number
+  automated: boolean
+  courseFullCards?: Card[]
+  raceSequence?: Card[]
+  positionsAtStep?: Record<Suit, number>[]
+  raceFinalPositions?: Record<Suit, number>
 }
 
 export interface PlayerJoinPayload {

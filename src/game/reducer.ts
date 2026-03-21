@@ -1,4 +1,4 @@
-import type { BetsByPlayer, CourseState, HouseGameState, PlayerId, RaceState, SettlementResult, Suit } from './types'
+import type { BetsByPlayer, Card, CourseState, HouseGameState, PlayerId, RaceState, SettlementResult, Suit } from './types'
 import { SUITS } from './types'
 import {
   createInitialBetsByPlayer,
@@ -9,7 +9,7 @@ import {
 } from './engine'
 
 export type GameAction =
-  | { type: 'SET_SETTINGS'; startingChips: number; houseBankroll: number; chipsPerDollar: number; racesToPlay: number }
+  | { type: 'SET_SETTINGS'; startingChips: number; houseBankroll: number; chipsPerDollar: number; racesToPlay: number; automated?: boolean }
   | { type: 'ADD_PLAYER'; name: string }
   | { type: 'REMOVE_PLAYER'; playerId: PlayerId }
   | { type: 'UPDATE_PLAYER_NAME'; playerId: PlayerId; name: string }
@@ -24,6 +24,8 @@ export type GameAction =
   | { type: 'CONFIRM_RACE_OUTCOME'; winnerSuit: Suit }
   | { type: 'NEW_RACE' }
   | { type: 'SETTLE_HOUSE_DEBT' }
+  | { type: 'SET_AUTOMATED_COURSE'; courseCards: Card[] }
+  | { type: 'SET_AUTOMATED_RACE'; raceSequence: Card[]; positionsAtStep: Record<Suit, number>[]; winnerSuit: Suit; finalPositions: Record<Suit, number> }
 
 export function createInitialGameState(args: {
   players: { id: PlayerId; name: string; chips: number }[]
@@ -49,6 +51,7 @@ export function createInitialGameState(args: {
     race: emptyRace,
     payout: undefined,
     settlement: undefined,
+    automated: false,
   }
 }
 
@@ -141,6 +144,7 @@ export function gameReducer(state: HouseGameState, action: GameAction): HouseGam
         chipsPerDollar,
         racesToPlay,
         racesCompleted: 0,
+        automated: action.automated ?? state.automated,
         // In setup, treat editing `startingChips` as updating the players' current stacks too.
         players: state.players.map((p) => ({
           ...p,
@@ -194,6 +198,7 @@ export function gameReducer(state: HouseGameState, action: GameAction): HouseGam
         payout: undefined,
         settlement: undefined,
         racesCompleted: 0,
+        automated: state.automated,
       }
     }
 
@@ -256,10 +261,10 @@ export function gameReducer(state: HouseGameState, action: GameAction): HouseGam
     case 'CONFIRM_RACE_OUTCOME': {
       if (state.phase !== 'race') return state
 
-      // Dealer selects the winner; we don't simulate intermediate progress.
       const race: RaceState = {
+        ...state.race,
         winnerSuit: action.winnerSuit,
-        finalPositions: finishPositionsForWinner(action.winnerSuit),
+        finalPositions: state.race.finalPositions ?? finishPositionsForWinner(action.winnerSuit),
       }
       const payout = computePayout({ players: state.players, betsByPlayer: state.betsByPlayer, course: state.course, winnerSuit: action.winnerSuit })
 
@@ -311,6 +316,37 @@ export function gameReducer(state: HouseGameState, action: GameAction): HouseGam
 
     case 'SETTLE_HOUSE_DEBT': {
       return applySettlement(state)
+    }
+
+    case 'SET_AUTOMATED_COURSE': {
+      if (state.phase !== 'course') return state
+      const suits = action.courseCards.map((c) => c.suit)
+      return {
+        ...state,
+        phase: 'betting',
+        course: { cards: suits, reshuffleNeeded: false, fullCards: action.courseCards },
+        bettingOrder: shufflePlayerIds(state.players.map((p) => p.id)),
+        betsByPlayer: createInitialBetsByPlayer(state.players),
+        race: {},
+        payout: undefined,
+      }
+    }
+
+    case 'SET_AUTOMATED_RACE': {
+      if (state.phase !== 'race') return state
+
+      const race: RaceState = {
+        winnerSuit: action.winnerSuit,
+        finalPositions: action.finalPositions,
+        raceSequence: action.raceSequence,
+        positionsAtStep: action.positionsAtStep,
+      }
+
+      return {
+        ...state,
+        phase: 'race',
+        race,
+      }
     }
   }
 }
